@@ -36,3 +36,7 @@ build/
 cmake-build-*/
 .idea/
 .vscode/
+
+# Compressed files
+*.zip
+*.rar
