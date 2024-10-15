@@ -40,8 +40,9 @@
 3. **配置环境变量**  
 
    ```bash
-   export PIXELS_HOME=$(pwd)
-   export PIXELS_SRC=$(pwd)
+   echo 'export PIXELS_HOME=$PWD' >> ~/.bashrc
+   echo 'export PIXELS_SRC=$PWD' >> ~/.bashrc
+   source ~/.bashrc
    ```
 
 4. **编译代码**  
@@ -57,7 +58,7 @@
    wget http://10.77.110.75/pixels/pixels-tpch-1.zip
    unzip pixels-tpch-1.zip
    ```
-   
+
 6. **修改测试数据路径**  
    使用`vim`编辑路径，并进行全局替换：  
 
@@ -68,7 +69,7 @@
    :%s#/data/9a3-02/tpch-1#/home/pixels/about-class/mini-pixels#g
    ```
 
-   **提示**:请将`/home/pixels/about-class/mini-pixels`替换为实际路径。
+   **提示：** 若数据解压路径非 `mini-pixels` 目录，请将 `/home/pixels/about-class/mini-pixels` 替换为实际路径。
 
 7. **运行pixels reader测试并截屏**  
 
@@ -78,6 +79,15 @@
    ```
 
 8. **进行TPCH测试并截屏**  
+
+   执行一条查询
+
+   ```bash
+   ./build/release/benchmark/benchmark_runner 
+   "benchmark/tpch/pixels/tpch_1/q01.benchmark"
+   ```
+
+   执行整个benchmark
 
    ```bash
    cd pixels-duckdb
@@ -107,4 +117,4 @@
 
 ## 4. 附件示例  
 
-实验结果截图参考experiments/lab1-ref.png
+实验结果截图参考 ![pic](./lab1-ref.png)
