@@ -40,3 +40,6 @@ cmake-build-*/
 # Compressed files
 *.zip
 *.rar
+
+# benchmark results (so large)
+/pixels
