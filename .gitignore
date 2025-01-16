@@ -44,3 +44,6 @@ cmake-build-*/
 # benchmark results (so large)
 /pixels
 
+# helpers for clangd
+/compile_commands.json
+/.cache
