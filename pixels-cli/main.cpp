@@ -67,7 +67,7 @@ int main () {
                         "STAT\n" <<
                         "QUERY\n" <<
                         "COPU\n" <<
-                        "FILE_META";
+                        "FILE_META\n";
             std::cout << "{command} -h to show the usage of a command.\nexit / quit / -q to exit.\n";
             continue;
         }
