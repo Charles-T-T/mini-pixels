@@ -43,6 +43,5 @@ private:
     bool runlengthEncoding;
     std::unique_ptr<RunLenIntEncoder> encoder;
     std::vector<long> curPixelVector; // current pixel value vector haven't written out yet
-
 };
 #endif // DUCKDB_DATECOLUMNWRITER_H

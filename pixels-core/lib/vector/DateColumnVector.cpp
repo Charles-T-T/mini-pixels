@@ -4,57 +4,112 @@
 
 #include "vector/DateColumnVector.h"
 
-DateColumnVector::DateColumnVector(uint64_t len, bool encoding): ColumnVector(len, encoding) {
-	if(encoding) {
-        posix_memalign(reinterpret_cast<void **>(&dates), 32,
-                       len * sizeof(int32_t));
-	} else {
-		this->dates = nullptr;
-	}
-	memoryUsage += (long) sizeof(int) * len;
+#include <cstdint>
+#include <cstdlib>
+#include <ctime>
+#include <iomanip>
+
+DateColumnVector::DateColumnVector(uint64_t len, bool encoding)
+    : ColumnVector(len, encoding) {
+    posix_memalign(reinterpret_cast<void **>(&dates), 32,
+                   len * sizeof(int32_t));
+    memoryUsage += (long)sizeof(int) * len;
 }
 
 void DateColumnVector::close() {
-	if(!closed) {
-		if(encoding && dates != nullptr) {
-			free(dates);
-		}
-		dates = nullptr;
-		ColumnVector::close();
-	}
+    if (!closed) {
+        if (encoding && dates != nullptr) {
+            free(dates);
+        }
+        dates = nullptr;
+        ColumnVector::close();
+    }
 }
 
 void DateColumnVector::print(int rowCount) {
-	for(int i = 0; i < rowCount; i++) {
-		std::cout<<dates[i]<<std::endl;
-	}
+    for (int i = 0; i < rowCount; i++) {
+        std::cout << dates[i] << std::endl;
+    }
 }
 
 DateColumnVector::~DateColumnVector() {
-	if(!closed) {
-		DateColumnVector::close();
-	}
+    if (!closed) {
+        DateColumnVector::close();
+    }
 }
 
 /**
-     * Set a row from a value, which is the days from 1970-1-1 UTC.
-     * We assume the entry has already been isRepeated adjusted.
-     *
-     * @param elementNum
-     * @param days
+ * Set a row from a value, which is the days from 1970-1-1 UTC.
+ * We assume the entry has already been isRepeated adjusted.
+ *
+ * @param elementNum
+ * @param days
  */
 void DateColumnVector::set(int elementNum, int days) {
-	if(elementNum >= writeIndex) {
-		writeIndex = elementNum + 1;
-	}
-	dates[elementNum] = days;
-	// TODO: isNull
+    if (elementNum >= writeIndex) {
+        writeIndex = elementNum + 1;
+    }
+    dates[elementNum] = days;
+    // TODO: isNull
 }
 
-void * DateColumnVector::current() {
-    if(dates == nullptr) {
+void *DateColumnVector::current() {
+    if (dates == nullptr) {
         return nullptr;
     } else {
         return dates + readIndex;
+    }
+}
+
+void DateColumnVector::add(std::string &value) {
+    // transform string to date
+    std::tm date = {};
+    std::istringstream ss(value);
+    ss >> std::get_time(&date, "%Y-%m-%d");
+    if (ss.fail()) {
+        throw std::invalid_argument(
+            "Invalid date format. Expected: YYYY-MM-DD");
+    }
+
+    // transform date to int
+    // FIXME: throw error "Invalid date" if date before 1970
+    std::time_t time = std::mktime(&date);
+    int64_t dayCount = static_cast<int64_t>(time / (60 * 60 * 24));
+
+    // add result
+    add(dayCount);
+}
+
+void DateColumnVector::add(bool value) { add(value ? 1 : 0); }
+
+void DateColumnVector::add(int64_t value) {
+    if (writeIndex >= length) {
+        ensureSize(writeIndex * 2, true);
+    }
+    int index = writeIndex++;
+    dates[index] = value;
+    isNull[index] = false;
+}
+
+void DateColumnVector::add(int value) {
+    if (writeIndex >= length) {
+        ensureSize(writeIndex * 2, true);
+    }
+    int index = writeIndex++;
+    dates[index] = value;
+    isNull[index] = false;
+}
+
+void DateColumnVector::ensureSize(uint64_t size, bool preserveData) {
+    if (length < size) {
+        int *oldDates = dates;
+        posix_memalign(reinterpret_cast<void **>(&dates), 32,
+                       size * sizeof(int32_t));
+        if (preserveData) {
+            std::copy(oldDates, oldDates + length, dates);
+        }
+        delete[] oldDates;
+        memoryUsage += (long)sizeof(int) * (size - length);
+        resize(size);
     }
 }
