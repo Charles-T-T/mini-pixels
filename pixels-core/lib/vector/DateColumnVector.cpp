@@ -74,7 +74,7 @@ void DateColumnVector::add(std::string &value) {
     // transform date to int
     // FIXME: throw error "Invalid date" if date before 1970
     std::time_t time = std::mktime(&date);
-    int64_t dayCount = static_cast<int64_t>(time / (60 * 60 * 24));
+    int dayCount = static_cast<int>(time / (60 * 60 * 24));
 
     // add result
     add(dayCount);
@@ -95,9 +95,10 @@ void DateColumnVector::add(int value) {
     if (writeIndex >= length) {
         ensureSize(writeIndex * 2, true);
     }
-    int index = writeIndex++;
-    dates[index] = value;
-    isNull[index] = false;
+    // int index = writeIndex++;
+    // dates[index] = value;
+    // isNull[index] = false;
+    set(writeIndex++, value);
 }
 
 void DateColumnVector::ensureSize(uint64_t size, bool preserveData) {
