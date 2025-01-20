@@ -71,7 +71,7 @@ void DateColumnWriter::newPixel()
 {
     if (runlengthEncoding) 
     {
-        std::vector<byte> buffer(curPixelVectorIndex * sizeof(long));
+        std::vector<byte> buffer(curPixelVectorIndex * sizeof(int));
         int resLen;
         encoder->encode(curPixelVector.data(), buffer.data(), curPixelVectorIndex, resLen);
         outputStream->putBytes(buffer.data(), resLen);
@@ -82,7 +82,7 @@ void DateColumnWriter::newPixel()
         EncodingUtils encodingUtils;
         for (int i = 0; i < curPixelVectorIndex; i++) 
         {
-            encodingUtils.writeLongLE(curVecPartitionBuffer, curPixelVector[i]);
+            encodingUtils.writeIntLE(curVecPartitionBuffer, curPixelVector[i]);
         }
         outputStream->putBytes(curVecPartitionBuffer->getPointer(), curVecPartitionBuffer->getWritePos());
     }
@@ -114,10 +114,14 @@ void DateColumnWriter::writeCurPartTime(std::shared_ptr<ColumnVector> columnVect
 
 bool DateColumnWriter::decideNullsPadding(std::shared_ptr<PixelsWriterOption> writerOption) 
 {
+    if (writerOption->getEncodingLevel().ge(EncodingLevel::Level::EL2))
+    {
+        return false;
+    }
     return writerOption->isNullsPadding();
 }
 
-pixels::proto::ColumnEncoding DateColumnWriter::getColumnChunkEncoding() const
+pixels::proto::ColumnEncoding DateColumnWriter::getColumnChunkEncoding()
 {
     pixels::proto::ColumnEncoding columnEncoding;
     if (runlengthEncoding) 

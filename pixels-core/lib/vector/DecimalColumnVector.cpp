@@ -4,6 +4,7 @@
 
 #include "vector/DecimalColumnVector.h"
 #include "duckdb/common/types/decimal.hpp"
+// #include <boost/multiprecision/cpp_dec_float.hpp>
 
 /**
  * The decimal column vector with precision and scale.

@@ -37,7 +37,7 @@ public:
     void newPixel() override;
     void writeCurPartTime(std::shared_ptr<ColumnVector> columnVector, int* values, int curPartLength, int curPartOffset);
     bool decideNullsPadding(std::shared_ptr<PixelsWriterOption> writerOption) override;
-    pixels::proto::ColumnEncoding getColumnChunkEncoding() const;
+    pixels::proto::ColumnEncoding getColumnChunkEncoding() override;
 
 private:
     bool runlengthEncoding;
