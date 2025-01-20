@@ -20,7 +20,7 @@
 
 #include "writer/TimestampColumnWriter.h"
 #include "utils/BitUtils.h"
-#include "vector/TimestampColumnVector.h"
+// #include "vector/TimestampColumnVector.h"
 
 TimestampColumnWriter::TimestampColumnWriter(std::shared_ptr<TypeDescription> type, std::shared_ptr<PixelsWriterOption> writerOption) :
 ColumnWriter(type, writerOption), curPixelVector(pixelStride)

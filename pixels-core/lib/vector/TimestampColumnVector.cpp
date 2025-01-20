@@ -70,30 +70,47 @@ void TimestampColumnVector::set(int elementNum, long ts) {
 
 void TimestampColumnVector::add(std::string &value) {
     // transform string into timestamp
-    std::tm tm = {};
+    std::tm time = {};
     std::istringstream ss(value);
-    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+
+    // main datetime part (up to seconds)
+    ss >> std::get_time(&time, "%Y-%m-%d %H:%M:%S");
     if (ss.fail()) {
         throw std::invalid_argument(
-            "Invalid timestamp string format. Expected: YYYY-MM-DD HH:MM:SS");
+            "Invalid timestamp string format. Expected: YYYY-MM-DD "
+            "HH:MM:SS[.millis.micros]");
     }
-    time_t timestamp = std::mktime(&tm);
+
+    // optional milliseconds and microseconds part
+    long millis = 0, micros = 0;
+    char dot;
+    if (ss.peek() == '.') {
+        ss >> dot >> millis;
+        if (ss.peek() == '.') {
+            ss >> dot >> micros;
+        }
+    }
+
+    time_t timestamp = std::mktime(&time);
     if (timestamp == -1) {
         throw std::runtime_error("Failed to convert time to timestamp.");
     }
 
-    // transform timestamp into long, then add
-    add(static_cast<long>(timestamp));
+    // Combine with millis and micros
+    int64_t final_timestamp =
+        static_cast<int64_t>(timestamp * 1'000'000 + millis * 1000 + micros);
+
+    // Add the result
+    add(final_timestamp);
 }
 
 void TimestampColumnVector::add(int64_t value) {
     if (writeIndex >= length) {
         ensureSize(writeIndex * 2, true);
     }
-    // int index = writeIndex++;
-    // times[index] = value;
-    // isNull[index] = false;
-    set(writeIndex++, value);
+    int index = writeIndex++;
+    times[index] = value;
+    isNull[index] = false;
 }
 
 void TimestampColumnVector::ensureSize(uint64_t size, bool preserveData) {
