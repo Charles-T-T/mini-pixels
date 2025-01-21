@@ -4,6 +4,7 @@
 
 #include "vector/DecimalColumnVector.h"
 #include "duckdb/common/types/decimal.hpp"
+#include <cstdint>
 // #include <boost/multiprecision/cpp_dec_float.hpp>
 
 /**
@@ -95,4 +96,82 @@ int DecimalColumnVector::getPrecision() {
 
 int DecimalColumnVector::getScale() {
 	return scale;
+}
+
+void DecimalColumnVector::add(std::string &value) {
+        // check for valid decimal format 
+    size_t dotPos = value.find('.');
+    std::string integerPart = value.substr(0, dotPos);
+    std::string fractionalPart = (dotPos != std::string::npos) ? value.substr(dotPos + 1) : "";
+
+    long unscaledValue;  // result
+
+    if (integerPart.length() == precision) {
+        unscaledValue = stol(integerPart);
+        if (!fractionalPart.empty()) {
+            int roundDigit = fractionalPart[0] - '0';
+            if (roundDigit >= 5) {
+                unscaledValue++;
+            }
+        }
+        add(static_cast<int64_t>(unscaledValue));
+        return;
+    }
+    if (integerPart.length() > precision) {
+        throw std::overflow_error("Decimal value exceeds specified precision: integer part too long.");
+    }
+
+    // handle precision and scale
+    std::string combined;
+    if (!fractionalPart.empty()) {
+        if (fractionalPart.length() > static_cast<size_t>(scale)) {
+            // truncate extra fractional digits
+            int roundDigit = fractionalPart[scale] - '0';
+            fractionalPart = fractionalPart.substr(0, scale); 
+            long fractionalNum = stol(fractionalPart);
+            if (roundDigit >= 5) {
+                fractionalNum++;
+            }
+            fractionalPart = std::to_string(fractionalNum);
+        } else {
+            fractionalPart.append(scale - fractionalPart.length(), '0'); // pad with zeros
+        }
+    } else {
+        fractionalPart.insert(0, scale, '0');
+    }
+    combined = integerPart + fractionalPart;
+    
+    // use long to save decimal result
+    try {
+        unscaledValue = std::stol(combined);
+    } catch (const std::out_of_range&) {
+        throw std::overflow_error("Decimal value exceeds range of long.");
+    }
+
+    // add result
+    add(static_cast<int64_t>(unscaledValue)); 
+}
+
+void DecimalColumnVector::add(int64_t value) {
+    if (writeIndex >= length) {
+        ensureSize(writeIndex * 2, true);
+    }
+    int index = writeIndex++;
+    vector[index] = value;
+    isNull[index] = false;
+}
+
+void DecimalColumnVector::ensureSize(uint64_t size, bool preserveData) {
+    ColumnVector::ensureSize(size, preserveData);
+    if (length < size) {
+        long *oldTimes = vector;
+        posix_memalign(reinterpret_cast<void **>(&vector), 32,
+                       size * sizeof(int64_t));
+        if (preserveData) {
+            std::copy(oldTimes, oldTimes + length, vector);
+        }
+        delete[] oldTimes;
+        memoryUsage += (long)sizeof(long) * (size - length);
+        resize(size);
+    }
 }
