@@ -72,18 +72,12 @@ void DateColumnVector::add(std::string &value) {
     }
 
     // transform date to int
-    // FIXME: throw error "Invalid date" if date before 1970
     std::time_t time = std::mktime(&date);
-    if (time == -1) {
-        throw std::runtime_error("Failed to convert time to timestamp.");
-    }
     int dayCount = static_cast<int>(time / (60 * 60 * 24)) + 1;
 
     // add result
     add(dayCount);
 }
-
-void DateColumnVector::add(bool value) { add(value ? 1 : 0); }
 
 void DateColumnVector::add(int64_t value) {
     if (writeIndex >= length) {

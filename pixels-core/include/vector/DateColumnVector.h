@@ -30,7 +30,6 @@ class DateColumnVector : public ColumnVector {
     void set(int elementNum, int days);
 
     void add(std::string &value) override;
-    void add(bool value) override;
     void add(int64_t value) override;
     void add(int value) override;
     void ensureSize(uint64_t size, bool preserveData) override;
